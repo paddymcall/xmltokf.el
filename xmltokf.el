@@ -29,12 +29,16 @@
 ;;; Code:
 
 (require 'xmltok)
+(require 'dom)
 (require 'subr-x)
 (require 'cl-lib)
 (require 'cl-macs)
 
-;; Consider: reimplent with another “object” type? eieio or ‘record’.
-;; But cl-defstruct is included in emacs!
+;; Implent token and elements with ‘cl-defstruct’: it is included in
+;; emacs, and seems to be pretty standard.  Other options considered
+;; were ‘eieio’ (also in GNU/Emacs) and ‘record’ (which is actually
+;; the basis for ‘cl-defstruct’, according to Info node
+;; `(elisp)Records').
 
 (cl-defstruct (xmltokf-token (:type list)
                              :named)
@@ -464,6 +468,7 @@ the reference.  Nested entity references are not included in the list."
 ;; (ert "test-xmltokf-attribute-full-name")
 
 (defun xmltokf-attribute-value (att)
+  "Return the value of attribute ATT."
   (let ((rnv (xmltokf-attribute-raw-normalized-value att)))
     (and rnv
 	 (if (stringp rnv)
@@ -506,11 +511,15 @@ the reference.  Nested entity references are not included in the list."
 ;; (ert "test-xmltokf-attribute-value")
 
 (defun xmltokf-scan-element (pom-or-token &optional buff)
-  "Get start and end tag of element starting at POM-OR-TOKEN (a marker, position, or token).
+  "Get element starting at POM-OR-TOKEN as an ‘xmltokf-element’.
+
+POM-OR-TOKEN is a marker, position, or token.
+
+The default for buffer BUFF is the ‘current-buffer’.
 
 This returns the results of ‘xmltokf-scan-here’ on the thing at
-POSITION, and, if useful, its end.  It is only meaningful if an empty-element,
-data, space, or start-tag starts at POSITION."
+POSITION, and, if useful, its end.  It is only meaningful if an
+empty-element, data, space, or start-tag starts at POSITION."
   (with-current-buffer (or (and (markerp pom-or-token)
                                 (marker-buffer pom-or-token))
                            (and (xmltokf-token-p pom-or-token)
@@ -639,36 +648,47 @@ If LOCAL is not nil, just match on local name."
 ;;; Check for types
 
 (defun xmltokf-is-cdata-section (token)
+  "Return t if TOKEN is a cdata-section."
   (eq (xmltokf-token-type token) 'cdata-section))
 
 (defun xmltokf-is-comment (token)
+  "Return t if TOKEN is a comment."
   (eq (xmltokf-token-type token) 'comment))
 
 (defun xmltokf-is-data (token)
+  "Return t if TOKEN is data."
   (eq (xmltokf-token-type token) 'data))
 
 (defun xmltokf-is-empty-element (token)
+  "Return t if TOKEN is an element."
   (eq (xmltokf-token-type token) 'empty-element))
 
 (defun xmltokf-is-end-tag (token)
+  "Return t if TOKEN is a tag."
   (eq (xmltokf-token-type token) 'end-tag))
 
-(defun xmltokf-is-notwell-formed (token)
+(defun xmltokf-is-not-well-formed (token)
+  "Return t if TOKEN is not well-formed."
   (eq (xmltokf-token-type token) 'not-well-formed))
 
 (defun xmltokf-is-partial-empty-element (token)
+  "Return t if TOKEN is a partial empty element."
   (eq (xmltokf-token-type token) 'partial-empty-element))
 
 (defun xmltokf-is-partial-end-tag (token)
+  "Return t if TOKEN is a partial end tag."
   (eq (xmltokf-token-type token) 'partial-end-tag))
 
 (defun xmltokf-is-partial-start-tag (token)
+  "Return t if TOKEN is a partial start tag."
   (eq (xmltokf-token-type token) 'partial-start-tag))
 
-(defun xmltokf-is-space  (token)
+(defun xmltokf-is-space (token)
+  "Return t if TOKEN is only space."
   (eq (xmltokf-token-type token) 'space ))
 
 (defun xmltokf-is-start-tag (token)
+  "Return t if TOKEN is a start tag."
   (eq (xmltokf-token-type token) 'start-tag))
 
 
@@ -688,11 +708,13 @@ If LOCAL is not nil, just match on local name."
 
 
 (defun xmltokf-is-prolog (token)
+  "Return t if TOKEN is prolog."
   (eq (xmltokf-token-type token) 'prolog))
 
-;;; A dumb-ass serializer
+;;; A dumb serializer
 
 (defun xmltokf-attribute-val-to-text (attribute value)
+  "Try to serialize ATTRIBUTE with VALUE."
   (string-join
    `(,(string-trim (format "%s" attribute))
      "=\""
@@ -835,8 +857,7 @@ SEPARATOR is passed as is to ‘dom-texts’."
       (buffer-string)
       "<lb break=\"no\"/>")))
   (with-temp-buffer
-    (insert "<lb   
-/>")
+    (insert "<lb   \n/>")
     (should
      (equal
       (xmltokf-set-attribute!
@@ -849,8 +870,7 @@ SEPARATOR is passed as is to ‘dom-texts’."
     (should
      (equal
       (buffer-string)
-      "<lb break=\"no\"   
-/>")))
+      "<lb break=\"no\"   \n/>")))
   (with-temp-buffer
     (insert "<lb   break=\"yes\"/>")
     (should
@@ -977,7 +997,7 @@ Returns scan data for the new start tag."
           (xmltokf-rename-token! (xmltokf-element-end-token item) name)
           (xmltokf-rename-token! (xmltokf-element-start-token item) name))
          ((xmltokf-element-start-token item)
-          (xmltokf-rename-token! (xmltokf-element-start-token item) name))              
+          (xmltokf-rename-token! (xmltokf-element-start-token item) name))
          (t
           (warn (format "No changes for thing at position %s: %s" pom-or-token (car item)))
           nil))))))
@@ -1001,7 +1021,7 @@ Returns scan data for the new start tag."
 ;; (ert "test-xmltokf-rename-element!")
 
 (defun xmltokf-drop-token! (token)
-  "Remove token from buffer.
+  "Remove TOKEN from buffer.
 
 Returns the string that the token was encoded as."
   (atomic-change-group
@@ -1130,3 +1150,4 @@ Returns the string that the element was encoded as."
 ;; (ert "test-xmltokf-token-to-text")
 
 (provide 'xmltokf)
+;;; xmltokf.el ends here
