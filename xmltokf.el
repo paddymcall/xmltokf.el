@@ -42,7 +42,7 @@
 
 (cl-defstruct (xmltokf-token (:type list)
                              :named)
-  "A structure to represent a token as scanned by xmltokf.
+  "A structure to represent a token as scanned by ‘xmltokf-scan-here’.
 
 See `(cl)Structures' for the general idea."
   (type
@@ -120,6 +120,29 @@ Also possible: nil, e.g., if `xmltok-forward' is called at end of buffer.")
    nil
    :documentation "End-token, an ‘xmltokf-token’: will be nil if there’s no end-tag."))
 
+;; An easier way to switch to the right context; mostly copied from ‘with-current-buffer’
+(defmacro xmltokf-with-current-buffer (pom-tok-buff &rest body)
+  "Execute the forms in BODY with buffer POM-TOK-BUFF temporarily current.
+
+POM-TOK-BUFF must be:
+
+- a point: switch to the current buffer (i.e., no change)
+- a marker: switch to the marker’s buffer
+- an ‘xmltokf-token’: switch to the token’s buffer
+- a buffer or the name of an existing buffer
+
+The value returned is the value of the last form in BODY.  See
+also `with-temp-buffer'."
+  (declare (indent 1) (debug t))
+  `(save-current-buffer
+     (set-buffer (cond
+                  ((markerp ,pom-tok-buff) (marker-buffer ,pom-tok-buff))
+                  ((xmltokf-token-p ,pom-tok-buff)
+                   (xmltokf-token-buffer ,pom-tok-buff))
+                  ((bufferp ,pom-tok-buff) ,pom-tok-buff)
+                  (t (current-buffer))))
+     ,@body))
+
 (defun xmltokf-scan-here (pom-or-token &optional buff)
   "Scan token at point, marker, or ‘xmltokf-token’ POM-OR-TOKEN in BUFF.
 
@@ -132,21 +155,14 @@ the same token, unless the buffer has changed in that area.
 Returns a ‘cl-defstruct’ as defined by ‘make-xmltokf-token’ (see
 Info node `(cl)Structures' for the general idea of these
 structures)."
-  (let ((buff
-         (cond
-          ((markerp pom-or-token) (marker-buffer pom-or-token))
-          ((xmltokf-token-p pom-or-token)
-           (xmltokf-token-buffer pom-or-token))
-          (buff buff)
-          (t (current-buffer))))
-        (start (cond
-                ((markerp pom-or-token) pom-or-token)
-                ((integerp pom-or-token) pom-or-token)
-                ((xmltokf-token-p pom-or-token)
-                 (xmltokf-token-start pom-or-token))
-                (t (error "Wrong type of argument for pom-or-token: %s"
-                          (type-of pom-or-token))))))
-    (with-current-buffer buff
+  (xmltokf-with-current-buffer pom-or-token
+    (let ((start (cond
+                  ((markerp pom-or-token) pom-or-token)
+                  ((integerp pom-or-token) pom-or-token)
+                  ((xmltokf-token-p pom-or-token)
+                   (xmltokf-token-start pom-or-token))
+                  (t (error "Wrong type of argument for pom-or-token: %s"
+                            (type-of pom-or-token))))))
       (save-excursion
         (save-match-data
 	  (goto-char start)
@@ -264,12 +280,12 @@ structures)."
 ;; (ert "test-xmltokf-scan-here")
 
 (defun xmltokf-tag-qname (token)
-  "Get tag name for TOKEN, including prefix (if any).
+  "Get tag name for TOKEN (an ‘xmltokf-token’), including prefix (if any).
 
 Only meaningful for start tags, end tags, and empty elements that
 have a prefix.  Returns nil if the function is not applicable or
 the prefix is not there."
-  (with-current-buffer (xmltokf-token-buffer token)
+  (xmltokf-with-current-buffer token
     (let ((ttype (xmltokf-token-type token)))
       (cond
        ((member ttype '(start-tag empty-element))
