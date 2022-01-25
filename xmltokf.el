@@ -44,7 +44,7 @@
                              :named)
   "A structure to represent a token as scanned by ‘xmltokf-scan-here’.
 
-See `(cl)Structures' for the general idea."
+See Info node `(cl)Structures' for the general idea."
   (type
    nil
    :documentation "Like `xmltok-type'
@@ -530,14 +530,15 @@ the reference.  Nested entity references are not included in the list."
   "Return an alist of keys and values for the attributes of POM-OR-TOKEN.
 
 POM-OR-TOKEN should be a position, marker, or ‘xmltokf-token’."
-  (let ((tok (or (xmltokf-token-p pom-or-token)
-                 (xmltokf-scan-here pom-or-token))))
-    (seq-map
-     (lambda (attr)
-       (cons
-        (xmltokf-attribute-full-name attr)
-        (xmltokf-attribute-value attr)))
-     (xmltokf-token-attributes tok))))
+  (seq-map
+   (lambda (attr)
+     (cons
+      (xmltokf-attribute-full-name attr)
+      (xmltokf-attribute-value attr)))
+   (xmltokf-token-attributes
+    (if  (xmltokf-token-p pom-or-token)
+        pom-or-token
+      (xmltokf-scan-here pom-or-token)))))
 
 
 (ert-deftest test-xmltokf-get-attributes-and-vals ()
@@ -548,7 +549,16 @@ POM-OR-TOKEN should be a position, marker, or ‘xmltokf-token’."
       '(("ed" . "#pva_ms")
 	("xml:id" . "ms_105a")
 	("n" . "105a"))
-      (xmltokf-get-attributes-and-vals (point-min))))))
+      (xmltokf-get-attributes-and-vals (point-min)))))
+  (with-temp-buffer
+    (insert "<pb ed=\"#pva_ms\" xml:id=\"ms_105a\" n=\"105a\"/>")
+    (should
+     (equal
+      '(("ed" . "#pva_ms")
+	("xml:id" . "ms_105a")
+	("n" . "105a"))
+      (let ((tok (xmltokf-scan-here (point-min))))
+        (xmltokf-get-attributes-and-vals tok))))))
 
 (defun xmltokf-scan-element (pom-or-token &optional buff)
   "Get element starting at POM-OR-TOKEN as an ‘xmltokf-element’.
