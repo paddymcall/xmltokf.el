@@ -526,6 +526,30 @@ the reference.  Nested entity references are not included in the list."
 
 ;; (ert "test-xmltokf-attribute-value")
 
+(defun xmltokf-get-attributes-and-vals (&optional pom-or-token)
+  "Return an alist of keys and values for the attributes of POM-OR-TOKEN.
+
+POM-OR-TOKEN should be a position, marker, or ‘xmltokf-token’."
+  (let ((tok (or (xmltokf-token-p pom-or-token)
+                 (xmltokf-scan-here pom-or-token))))
+    (seq-map
+     (lambda (attr)
+       (cons
+        (xmltokf-attribute-full-name attr)
+        (xmltokf-attribute-value attr)))
+     (xmltokf-token-attributes tok))))
+
+
+(ert-deftest test-xmltokf-get-attributes-and-vals ()
+  (with-temp-buffer
+    (insert "<pb ed=\"#pva_ms\" xml:id=\"ms_105a\" n=\"105a\"/>")
+    (should
+     (equal
+      '(("ed" . "#pva_ms")
+	("xml:id" . "ms_105a")
+	("n" . "105a"))
+      (xmltokf-get-attributes-and-vals (point-min))))))
+
 (defun xmltokf-scan-element (pom-or-token &optional buff)
   "Get element starting at POM-OR-TOKEN as an ‘xmltokf-element’.
 
