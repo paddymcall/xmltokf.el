@@ -170,10 +170,43 @@ structures)."
             ;; set up the scan data
             (xmltok-forward)
             (cond
-             ((member xmltok-type '(processing-instruction
-                                    not-well-formed))
-              (error "Not well formed, or processing instruction found at %s"
-                     pom-or-token))
+             ((eq xmltok-type 'not-well-formed)
+	      ;; This could have been a prolog, check:
+	      (cond
+	       ;; If there are any errors on the list, don’t bother
+	       ;; continuing
+	       (xmltok-errors
+		(error "Not well formed around position %s"
+		       pom-or-token))
+	       ((and
+		 (goto-char start)
+		 (xmltok-forward-prolog)
+		 (null xmltok-errors))
+		(make-xmltokf-token
+		 :type 'prolog
+		 :start xmltok-start
+		 :name-colon nil
+		 :name-start nil
+		 :name-end nil
+		 :replacement nil
+		 :attributes nil
+		 :namespace-attributes nil
+		 :errors xmltok-errors
+		 :end (point)
+		 :buffer (current-buffer)))))
+	     ((eq xmltok-type 'processing-instruction)
+	      (make-xmltokf-token
+	       :type xmltok-type
+	       :start xmltok-start
+	       :name-colon nil
+               :name-start (1+ xmltok-start)
+	       :name-end xmltok-name-end
+	       :replacement nil
+	       :attributes nil
+	       :namespace-attributes nil
+	       :errors xmltok-errors
+	       :end (point)
+               :buffer (current-buffer)))
              (t
               (make-xmltokf-token
 	       :type xmltok-type
@@ -253,18 +286,24 @@ structures)."
   (with-temp-buffer
     (insert "&gt;")
     (should
-     (equal
-      (xmltokf-scan-here (point-min))
-      `(xmltokf-token entity-ref 1 nil nil nil nil nil nil
-                      (["Referenced entity has not been defined" 2 4])
-                      5 ,(current-buffer))
-      ;; `(xmltokf-token entity-ref 1 nil nil nil ">" nil nil nil 5 ,(current-buffer))
-      )))
+     ;; TODO: different result in interactive use:
+     (or
+      (equal
+       (xmltokf-scan-here (point-min))
+       `(xmltokf-token entity-ref 1 nil nil nil ">" nil nil nil 5 ,(current-buffer)))
+      (equal
+       (xmltokf-scan-here (point-min))
+       `(xmltokf-token entity-ref 1 nil nil nil nil nil nil
+                       (["Referenced entity has not been defined" 2 4])
+                       5 ,(current-buffer))
+       ))))
   ;; These require  xmltok-forward-prolog, which still needs to be implemented.
   (with-temp-buffer
     (insert "<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
-    (should-error
-     (xmltokf-scan-here (point-min))))
+    (should
+     (equal
+      `(xmltokf-token processing-instruction 1 nil 2 6 nil nil nil (["Processing instruction target is xml" 3 6]) 39 ,(current-buffer))
+      (xmltokf-scan-here (point-min)))))
   (with-temp-buffer
     (insert "<!DOCTYPE author [
   <!ELEMENT author (#PCDATA)>
@@ -282,9 +321,9 @@ structures)."
 (defun xmltokf-tag-qname (token)
   "Get tag name for TOKEN (an ‘xmltokf-token’), including prefix (if any).
 
-Only meaningful for start tags, end tags, and empty elements that
-have a prefix.  Returns nil if the function is not applicable or
-the prefix is not there."
+Only meaningful for start tags, end tags, and empty elements.
+Can also accept a processing-instruction.  Returns nil if the
+function is not applicable or the prefix is not there."
   (xmltokf-with-current-buffer token
     (let ((ttype (xmltokf-token-type token)))
       (cond
@@ -292,7 +331,7 @@ the prefix is not there."
         (buffer-substring-no-properties
          (1+ (xmltokf-token-start token))
          (xmltokf-token-name-end token)))
-       ((eq ttype 'end-tag)
+       ((member ttype '(end-tag processing-instruction))
         (buffer-substring-no-properties
          (+ 2 (xmltokf-token-start token))
          (xmltokf-token-name-end token)))
@@ -316,7 +355,13 @@ the prefix is not there."
     (should
      (equal
       (xmltokf-tag-qname (xmltokf-scan-here (point-min)))
-      "soup"))))
+      "soup")))
+  (with-temp-buffer
+    (insert "<?pi1  p1 content ?>")
+    (should
+     (equal
+      (xmltokf-tag-qname (xmltokf-scan-here (point-min)))
+      "pi1"))))
 
 ;; (ert "test-xmltokf-tag-qname")
 
