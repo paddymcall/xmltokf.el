@@ -170,6 +170,7 @@ structures)."
             ;; set up the scan data
             (xmltok-forward)
             (cond
+	     ((not xmltok-type) nil)
              ((eq xmltok-type 'not-well-formed)
 	      ;; This could have been a prolog, check:
 	      (cond
@@ -314,7 +315,13 @@ structures)."
   (with-temp-buffer
     (insert "<!ELEMENT author (#PCDATA)>")
     (should-error
-     (xmltokf-scan-here (point-min)))))
+     (xmltokf-scan-here (point-min))))
+  (with-temp-buffer
+    (insert "<a/>")
+    (should
+     (equal
+      (xmltokf-scan-here (point-max))
+      nil))))
 
 ;; (ert "test-xmltokf-scan-here")
 
