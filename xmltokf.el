@@ -18,13 +18,14 @@
 
 ;;  To scan through a document, call something like this:
 
-;; (let ((current-token (xmltokf-scan-here (point-min)))
-;;       stack)
-;;   (while (xmltokf-token-type current-token)
-;;     ;; do your stuff
-;;     (push current-token stack)
-;;     (setq current-token (xmltokf-scan-here (xmltokf-token-end current-token))))
-;;   stack)
+;; (defun xmltokf-scan-doc ()
+;;   (let ((current-token (xmltokf-scan-here (point-min)))
+;;         stack)
+;;     (while (and current-token (xmltokf-token-type current-token))
+;;       ;; Do your stuff...
+;;       (push current-token stack)
+;;       (setq current-token (xmltokf-scan-here (xmltokf-token-end current-token))))
+;;     (nreverse stack)))
 
 ;;; Code:
 
