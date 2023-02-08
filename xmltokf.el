@@ -34,6 +34,8 @@
 (require 'subr-x)
 (require 'cl-lib)
 (require 'cl-macs)
+;; Probably better in a separate file:
+(require 'ert)
 
 ;; Implent token and elements with ‘cl-defstruct’: it is included in
 ;; emacs, and seems to be pretty standard.  Other options considered
