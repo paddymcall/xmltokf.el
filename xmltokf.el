@@ -924,6 +924,12 @@ SEPARATOR is passed as is to ‘dom-texts’."
 
 (defun xmltokf-set-attribute! (token attribute value)
   "Set TOKEN’s ATTRIBUTE to VALUE (adding it if it’s not there yet)."
+  (interactive
+   (list
+    (or (xmltokf-scan-here (point))
+	(error "Not at the beginning of a token!"))
+    (read-string "Attribute to add: ")
+    (read-string "Value for attribute: ")))
   (unless (or (xmltokf-is-start-tag token)
               (xmltokf-is-empty-element token))
     (error "Not something with attributes: %s"
