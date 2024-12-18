@@ -34,6 +34,11 @@
 ;;       (setq current-token (xmltokf-scan-here (xmltokf-token-end current-token))))
 ;;     (nreverse stack)))
 
+;; Packaging:
+
+;; Use `flycheck-mode', and run `package-lint-current-buffer'
+;; `checkdoc-current-buffer' from time to time.
+
 ;;; Code:
 
 (require 'xmltok)
@@ -348,8 +353,8 @@ the reference.  Nested entity references are not included in the list."
 (defun xmltokf-attribute-full-name (att)
   "Return the full name for attribute ATT.
 
-- <a href=\"soup\"/> --> \"href\".
-- <a super:pointer=\"soup\"/> --> \"super:pointer\"."
+- <a href=\"soup\"/> => \"href\".
+- <a super:pointer=\"soup\"/> => \"super:pointer\"."
   (buffer-substring-no-properties
    (xmltokf-attribute-name-start att)
    (xmltokf-attribute-name-end att)))
