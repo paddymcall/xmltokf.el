@@ -40,6 +40,9 @@
 ;; Use `flycheck-mode', and run `package-lint-current-buffer'
 ;; `checkdoc-current-buffer' from time to time.
 
+;; Also, after cloning https://github.com/purcell/package-lint:
+;; emacs -batch -l package-lint.el -f package-lint-batch-and-exit ../xmltokf/xmltokf.el
+
 ;;; Code:
 
 (require 'xmltok)
