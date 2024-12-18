@@ -1,4 +1,4 @@
-;;; xmltokf.el --- Functional wrappers around xmltok
+;;; xmltokf.el --- Functional wrappers around xmltok  -*- lexical-binding: t; -*-
 
 ;;; Commentary:
 

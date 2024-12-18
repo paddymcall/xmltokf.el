@@ -1,5 +1,115 @@
 # -*- org -*-
-#+TITLE: Functional xml tokenizer for Gnu/Emacs
+#+TITLE: Functional XML Tokenizer for Gnu/Emacs
 #+AUTHOR: Patrick McAllister (pma@rdorte.org)
 
 
+~xmltokf.el~ provides XML tokenizer functions that don’t have any side
+effects.  It wraps and relies on some of the functionality in the
+GNU/Emacs ~xmltok.el~ library ([[https://git.savannah.gnu.org/cgit/emacs.git/tree/lisp/nxml/xmltok.el][source]]), the tokenizer doing a lot of
+work for various XML functions in Gnu/Emacs.  This “functional”
+library also provides some functions that do have side effects (they
+have the suffix ~!~).  These functions allow you to change XML tokens
+or elements in a programmatic way, without interfering with any of the
+editing features provided in other libraries that rely on ~xmltok.el~
+
+For most ~xmltok.el~ functions, this library just adds an equivalent
+~xmltokf~ function, e.g., ~xmltok-forward~ becomes ~xmlotkf-
+
+To scan through a document, call something like this:
+
+#+BEGIN_SRC emacs-lisp
+  (let ((current-token (xmltokf-scan-here (point-min)))
+        stack)
+    (while (and current-token
+                (xmltokf-token-type current-token))
+      ;; Do your stuff...
+      (push current-token stack)
+      (setq current-token (xmltokf-scan-here (xmltokf-token-end current-token))))
+    (nreverse stack))
+#+END_SRC
+
+Note that this does not change any of the global variables defined in
+~xmltok~, does not move the point, and does not change any match-data
+or other things.  That means it does not interfere with validation or
+other operations that rely on those variables.
+
+
+To delete the element at a certain position:
+
+#+BEGIN_SRC emacs-lisp
+  (with-temp-buffer
+    (insert "<a><b/></a>")
+    (xmltokf-drop-element! (xmltokf-scan-element 4))
+    (buffer-string))
+#+END_SRC
+
+#+RESULTS:
+: <a></a>
+
+* Problems with the GNU/Emacs ~xmltok.el~ library
+
+There aren’t really any problems, it’s perfectly suitable for its
+purpose.  But its purpose is not always what you want, for the following reason:
+
+The main entry point is ~xmltok-forward~, which looks at the next
+token, advances the point over it, and stores the tokenizer state in a
+few variables that are not buffer-local.  The macro ~xmltok-save~ makes
+this obvious (I quote it here so that nothing weird can happen):
+
+#+BEGIN_SRC emacs-lisp
+  '(defmacro xmltok-save (&rest body)
+     (declare (indent 0) (debug t))
+     `(let (xmltok-type
+            xmltok-start
+            xmltok-name-colon
+            xmltok-name-end
+            xmltok-replacement
+            xmltok-attributes
+            xmltok-namespace-attributes
+            xmltok-errors)
+        ,@body))
+#+END_SRC
+
+
+Now, these variables are not buffer local.  When you start Emacs and
+automaticall open a bunch of XML files and have ~rng-validate-mode~
+enabled, Emacs will start evaluating each of the buffers with XML
+files.  If your XML files are big enough, Emacs may decide to
+interrupt the process in buffer A to do some work in buffer B.
+Obviously, the variables set in buffer A will not work in buffer B,
+causing evaluation to fail.  The functional library here does not
+solve this problem, but at least it doesn’t suffer from it.  You could
+try to define the variables wrapped by ~xmltok-save~ as buffer-local,
+that should work.
+
+Another scenario is when you want to use ~xmltok~ functions to edit an
+XML document programmatically in a buffer.  Since validation will lag
+behind your edits, a function making use of any of the standard
+~xmltok~ functions will be in trouble.
+
+It’s a bit tricky to reproduce, but this should illustrate things
+sufficiently:
+
+#+BEGIN_SRC emacs-lisp
+  (let ((buff-a (get-buffer-create "*tmp A*"))
+        (buff-b (get-buffer-create "*tmp B*")))
+    (with-current-buffer buff-a
+      (erase-buffer)
+      (insert "<?-- hello -->\n<a xml:id=\"buff-a\" xmlns=\"http://buff-a\"/>")
+      (goto-char (point-min))
+      (xmltok-forward))
+    (with-current-buffer buff-b
+      (erase-buffer)
+      (insert "<b xmlns=\"http://buff-b\" xml:id=\"b\" />")
+      (goto-char (point-min))
+      (xmltok-forward))
+    (string=
+     (with-current-buffer buff-a
+       (xmltok-start-tag-local-name))
+     "?"))
+#+END_SRC
+
+
+The function ~xmltok-start-tag-local-name~ extracts the name based on
+variables set in ~buff-b~.  These are obviously not correct in
+~buff-a~.
