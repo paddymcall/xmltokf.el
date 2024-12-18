@@ -45,28 +45,28 @@
 
 (cl-defstruct (xmltokf-token (:type list)
                              :named)
-  "A structure to represent a token as scanned by ‘xmltokf-scan-here’.
+  "A structure to represent a token as scanned by `xmltokf-scan-here'.
 
 See Info node `(cl)Structures' for the general idea."
   (type
    nil
    :documentation "Like `xmltok-type'
 
-Possible xmltok-types (TODO: find doc! this is what I grepped in
-`xmltok.el' and found in practice):
+Possible xmltok-types (this is what I grepped in `xmltok.el' and
+found in practice):
 
-'cdata-section
-'comment
-'data
-'empty-element
-'end-tag
-'not-well-formed
-'partial-empty-element
-'partial-end-tag
-'partial-start-tag
-'space
-'start-tag
-'prolog --> only if parsing is done by `nxml-token-after'
+- cdata-section
+- comment
+- data
+- empty-element
+- end-tag
+- not-well-formed
+- partial-empty-element
+- partial-end-tag
+- partial-start-tag
+- space
+- start-tag
+- prolog --> only if parsing is done by `nxml-token-after'
 
 Also possible: nil, e.g., if `xmltok-forward' is called at end of buffer.")
   (start
@@ -100,7 +100,7 @@ Also possible: nil, e.g., if `xmltok-forward' is called at end of buffer.")
    :documentation "Like `xmltok-errors'")
   (end
    nil
-   :documentation "Position where ‘(xmltok-forward start)’ lands
+   :documentation "Position where `xmltok-forward start' lands
    the pointer.  Could be end of a token, but need not
    be (errors, incomplete, etc.)")
   (buffer
@@ -127,7 +127,7 @@ Also possible: nil, e.g., if `xmltok-forward' is called at end of buffer.")
 (defmacro xmltokf-with-current-buffer (pom-tok-buff &rest body)
   "Execute the forms in BODY with buffer POM-TOK-BUFF temporarily current.
 
-POM-TOK-BUFF must be:
+POM-TOK-BUFF must be one of the following:
 
 - a point: switch to the current buffer (i.e., no change)
 - a marker: switch to the marker’s buffer
@@ -146,11 +146,8 @@ also `with-temp-buffer'."
                   (t (current-buffer))))
      ,@body))
 
-(defun xmltokf-scan-here (pom-or-token &optional buff)
+(defun xmltokf-scan-here (pom-or-token)
   "Scan token at point, marker, or ‘xmltokf-token’ POM-OR-TOKEN in BUFF.
-
-Default for BUFF is ‘current-buffer’, ignored if POM is a marker
-or an ‘xmltokf-token’ (which contains a buffer slot).
 
 Calling ‘xmltokf-scan-here’ on an ‘xmltokf-token’ should return
 the same token, unless the buffer has changed in that area.

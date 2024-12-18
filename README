@@ -106,10 +106,62 @@ sufficiently:
     (string=
      (with-current-buffer buff-a
        (xmltok-start-tag-local-name))
-     "?"))
+     "a"))
 #+END_SRC
 
 
+That won't evaluate to true, even though you might think it should!
 The function ~xmltok-start-tag-local-name~ extracts the name based on
 variables set in ~buff-b~.  These are obviously not correct in
 ~buff-a~.
+
+
+With the current library, you’d do:
+
+#+BEGIN_SRC emacs-lisp
+  (let ((buff-a (get-buffer-create "*tmp A*"))
+        (buff-b (get-buffer-create "*tmp B*")))
+    (with-current-buffer buff-a
+      (erase-buffer)
+      (insert "<!-- hello --><a xml:id=\"buff-a\" xmlns=\"http://buff-a\"/>")
+      (goto-char (point-min))
+      (xmltokf-scan-here (point))
+      (xmltok-forward))
+    (with-current-buffer buff-b
+      (erase-buffer)
+      (insert "<b xmlns=\"http://buff-b\" xml:id=\"b\" />")
+      (goto-char (point-min))
+      (xmltok-forward))
+    (string=
+     (with-current-buffer buff-a
+       ;; The `xmltok-forward' above left us after the comment.
+       (xmltokf-start-tag-local-name (xmltokf-scan-here (point))))
+     "a"))
+#+END_SRC
+
+#+RESULTS:
+: t
+
+
+Much of this is unnecessary, actually, since the token contains the
+buffer information anyway:
+
+#+BEGIN_SRC emacs-lisp
+  (let ((buff-a (get-buffer-create "*tmp A*"))
+        my-token)
+    (with-current-buffer buff-a
+      (erase-buffer)
+      (insert "<!-- hello --><a xml:id=\"buff-a\" xmlns=\"http://buff-a\"/>")
+      (goto-char (point-min))
+      (xmltokf-scan-here (point))
+      (xmltok-forward)  ;; The `xmltok-forward' leaves point after the
+                        ;; comment.
+      (setq my-token (xmltokf-scan-here (point))))
+    ;; Somewhere outside buff-a:
+    (string=
+     (xmltokf-start-tag-local-name my-token)
+     "a"))
+#+END_SRC
+
+#+RESULTS:
+: t
