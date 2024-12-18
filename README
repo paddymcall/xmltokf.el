@@ -4,18 +4,24 @@
 
 
 ~xmltokf.el~ provides XML tokenizer functions that don’t have any side
-effects.  It wraps and relies on some of the functionality in the
-GNU/Emacs ~xmltok.el~ library ([[https://git.savannah.gnu.org/cgit/emacs.git/tree/lisp/nxml/xmltok.el][source]]), the tokenizer doing a lot of
-work for various XML functions in Gnu/Emacs.  This “functional”
-library also provides some functions that do have side effects (they
-have the suffix ~!~).  These functions allow you to change XML tokens
-or elements in a programmatic way, without interfering with any of the
-editing features provided in other libraries that rely on ~xmltok.el~
+effects.  This makes it easier to program some XML editing functions.
 
-For most ~xmltok.el~ functions, this library just adds an equivalent
-~xmltokf~ function, e.g., ~xmltok-forward~ becomes ~xmlotkf-
+It wraps and relies on the functionality in the GNU/Emacs ~xmltok.el~
+library ([[https://git.savannah.gnu.org/cgit/emacs.git/tree/lisp/nxml/xmltok.el][source]]), which in turn provides the tokenizer that does a lot
+of work for various XML functions in Gnu/Emacs.
 
-To scan through a document, call something like this:
+The mostly “functional” library provided here also includes some
+functions that do have side effects (they end in ~!~).  These
+functions allow you to change XML tokens or elements in a programmatic
+way, without interfering with any of the editing features provided in
+other libraries that rely on ~xmltok.el~
+
+For several ~xmltok.el~ functions, this library just adds a logically
+equivalent ~xmltokf~ function: ~xmltok-start-tag-local-name~ becomes
+~xmltokf-start-tag-local-name~, for instance.  The return values are
+not equivalent.
+
+To scan through a document, do something like this:
 
 #+BEGIN_SRC emacs-lisp
   (let ((current-token (xmltokf-scan-here (point-min)))
@@ -33,8 +39,7 @@ Note that this does not change any of the global variables defined in
 or other things.  That means it does not interfere with validation or
 other operations that rely on those variables.
 
-
-To delete the element at a certain position:
+To delete an element at a certain position:
 
 #+BEGIN_SRC emacs-lisp
   (with-temp-buffer
@@ -46,17 +51,19 @@ To delete the element at a certain position:
 #+RESULTS:
 : <a></a>
 
-* Problems with the GNU/Emacs ~xmltok.el~ library
+* Motivation: problems with the GNU/Emacs ~xmltok.el~ library
 
 There aren’t really any problems, it’s perfectly suitable for its
-purpose.  But its purpose is not always what you want, for the following reason:
+purpose.  But its purpose may not always be what you want, for the
+following reason:
 
 The main entry point is ~xmltok-forward~, which looks at the next
 token, advances the point over it, and stores the tokenizer state in a
 few variables that are not buffer-local.  The macro ~xmltok-save~ makes
-this obvious (I quote it here so that nothing weird can happen):
+this obvious:
 
 #+BEGIN_SRC emacs-lisp
+  ;; Quoted here to avoid evaluation
   '(defmacro xmltok-save (&rest body)
      (declare (indent 0) (debug t))
      `(let (xmltok-type
@@ -72,7 +79,7 @@ this obvious (I quote it here so that nothing weird can happen):
 
 
 Now, these variables are not buffer local.  When you start Emacs and
-automaticall open a bunch of XML files and have ~rng-validate-mode~
+automatically open a bunch of XML files and have ~rng-validate-mode~
 enabled, Emacs will start evaluating each of the buffers with XML
 files.  If your XML files are big enough, Emacs may decide to
 interrupt the process in buffer A to do some work in buffer B.
@@ -83,9 +90,10 @@ try to define the variables wrapped by ~xmltok-save~ as buffer-local,
 that should work.
 
 Another scenario is when you want to use ~xmltok~ functions to edit an
-XML document programmatically in a buffer.  Since validation will lag
-behind your edits, a function making use of any of the standard
-~xmltok~ functions will be in trouble.
+XML document in a buffer by using some function.  Since validation as
+well as ~nxml~ fontification can lag behind your edits, a function
+making use of any of the standard ~xmltok~ functions will be in
+trouble.
 
 It’s a bit tricky to reproduce, but this should illustrate things
 sufficiently:
@@ -165,3 +173,4 @@ buffer information anyway:
 
 #+RESULTS:
 : t
+
