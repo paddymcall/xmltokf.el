@@ -63,6 +63,7 @@
 (require 'xmltok)
 (require 'dom)
 (require 'cl-lib)
+(require 'subr-x)
 
 ;; Implent token and elements with ‘cl-defstruct’: it is included in
 ;; emacs, and seems to be pretty standard.  Other options considered
