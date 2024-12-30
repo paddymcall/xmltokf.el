@@ -686,7 +686,7 @@ Returns scan data for the new start tag."
       (atomic-change-group
         (cond
          ((null item)
-          (warn (format "No balanced item at position %s" pom-or-token))
+          (warn "No balanced item at position %s" pom-or-token)
           nil)
          ((xmltokf-element-end-token item)
           ;; First the end!
@@ -695,7 +695,7 @@ Returns scan data for the new start tag."
          ((xmltokf-element-start-token item)
           (xmltokf-rename-token! (xmltokf-element-start-token item) name))
          (t
-          (warn (format "No changes for thing at position %s: %s" pom-or-token (car item)))
+          (warn "No changes for thing at position %s: %s" pom-or-token (car item))
           nil))))))
 
 
