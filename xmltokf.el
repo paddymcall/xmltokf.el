@@ -8,6 +8,21 @@
 ;; Package-Requires: ((emacs "25.1"))
 ;; Version: 0.1
 
+;; This file is NOT part of GNU Emacs.
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or (at
+;; your option) any later version.
+;;
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+;;
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 ;;; Commentary:
 
 ;; Uses xmltok without setting global variables (functional, sort of).
@@ -292,8 +307,8 @@ function is not applicable or the prefix is not there."
 
 ;; (ert "test-xmltokf-tag-local-name")
 
-;;; These are the same as in xmltok, though since they don't touch the
-;;; environment the att might be nil.
+;; These are the same as in xmltok, though since they don't touch the
+;; environment the att might be nil.
 
 (defsubst xmltokf-attribute-name-start (att)
   "Get start position of the name of attribute ATT."
@@ -330,8 +345,6 @@ Each member is a vector [TYPE START END] where TYPE is either char-ref
 or entity-ref and START and END are integers giving the start and end of
 the reference.  Nested entity references are not included in the list."
   (and att (aref att 6)))
-
-;;; <--- end quote
 
 (defun xmltokf-attribute-prefix (att)
   "Return prefix of attribute ATT or nil."
@@ -481,7 +494,7 @@ If LOCAL is not nil, just match on local name."
 
 ;; (ert 'xmltokf-test-attribute-by-name)
 
-;;; Check for types
+;; Check for types
 
 (defun xmltokf-is-cdata-section (token)
   "Return t if TOKEN is a cdata-section."
@@ -536,7 +549,7 @@ If LOCAL is not nil, just match on local name."
   "Return t if TOKEN is prolog."
   (eq (xmltokf-token-type token) 'prolog))
 
-;;; A dumb serializer
+;; A dumb serializer
 
 (defun xmltokf-attribute-val-to-text (attribute value)
   "Try to serialize ATTRIBUTE with VALUE."
@@ -597,9 +610,9 @@ BALANCED-THING should be as returned from ‘xmltokf-scan-element’.
 SEPARATOR is passed as is to ‘dom-texts’."
   (dom-texts (xmltokf-element-to-node balanced-thing) separator))
 
-;;; Some utilities for manipulating the buffer content (so much for
-;;; the “functional” part).  Functions here should generally return
-;;; the new scan-data for the token that they changed.
+;; Some utilities for manipulating the buffer content (so much for
+;; the “functional” part).  Functions here should generally return
+;; the new scan-data for the token that they changed.
 
 (defun xmltokf-set-attribute! (token attribute value)
   "Set TOKEN’s ATTRIBUTE to VALUE (adding it if it’s not there yet)."
@@ -744,8 +757,8 @@ Returns the string that the element was encoded as."
 
 
 
-;;; Probably useless, given we’re usually working in a buffer
-;;; containing the xml:
+;; Probably useless, given we’re usually working in a buffer
+;; containing the xml:
 
 ;; (defun xmltokf-token-to-text (token)
 ;;   "Return TOKEN serialized to text."
