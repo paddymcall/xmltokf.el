@@ -6,7 +6,7 @@
 ;; Keywords: text, hypermedia, languages, XML
 ;; URL: https://github.com/paddymcall/xmltokf.el
 ;; Package-Requires: ((emacs "25.1"))
-;; Version: 0.1
+;; Version: 0.2
 
 ;; This file is NOT part of GNU Emacs.
 
