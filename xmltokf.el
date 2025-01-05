@@ -25,21 +25,25 @@
 
 ;;; Commentary:
 
-;; Uses xmltok without setting global variables (functional, sort of).
+;; An XML tokenizer that does not use any global variables.
 
-;; To run the tests: make test
+;; xmltokf provides similar functions to the standard xmltok library
+;; included in Emacs, but without relying on global variables
+;; (functional, sort of).  There are also functions to
+;; programmatically edit XML tokens and elements.
 
-;;; Usage:
+;; Example usage:
 
 ;; Use ‘xmltokf-scan-here’ to construe a token, and
 ;; ‘xmltokf-scan-element’ to construe an element-ish sort of structure.
 
 ;; Functions that don’t end in an “!” aim to be free of any
 ;; side-effects: they do *not* set global variables (see
-;; ‘xmltok-save’), or move the point, but just return the current
-;; state.  Kind of purely functional in that respect.
+;; ‘xmltok-save’), or move the point, but just return information
+;; about the current token or element.  They are functional in that
+;; respect.
 
-;;  To scan through a document, call something like this:
+;;  To scan through a document, you could call something like this:
 
 ;; (defun xmltokf-scan-doc ()
 ;;   (let ((current-token (xmltokf-scan-here (point-min)))
@@ -50,13 +54,19 @@
 ;;       (setq current-token (xmltokf-scan-here (xmltokf-token-end current-token))))
 ;;     (nreverse stack)))
 
-;; Packaging:
+;; See tests.el for more examples.
+
+;; To run the tests from the command line: make test
+
+;; Packaging hints:
 
 ;; Use `flycheck-mode', and run `package-lint-current-buffer'
 ;; `checkdoc-current-buffer' from time to time.
 
-;; Also, after cloning https://github.com/purcell/package-lint:
-;; emacs -batch -l package-lint.el -f package-lint-batch-and-exit ../xmltokf/xmltokf.el
+;; Clone https://github.com/purcell/package-lint and run:
+;; ‘emacs -batch -l package-lint.el -f package-lint-batch-and-exit ../xmltokf/xmltokf.el’
+
+;; Use https://github.com/riscy/melpazoid/ (see its README).
 
 ;;; Code:
 
