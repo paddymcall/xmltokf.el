@@ -58,7 +58,7 @@
 
 ;; To run the tests from the command line: make test
 
-;; Packaging hints:
+;;; Packaging hints:
 
 ;; Use `flycheck-mode', and run `package-lint-current-buffer'
 ;; `checkdoc-current-buffer' from time to time.
